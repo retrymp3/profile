@@ -1,0 +1,150 @@
+{
+  "name": "Achuth V P",
+  "title": "Application Security Professional",
+  "email": "achuthvpvp@gmail.com",
+  "phone": "+918593837289",
+  "location": "Kerala, India",
+  "links": {
+    "linkedin": "https://www.linkedin.com/in/achuthvp/",
+    "github": "https://github.com/retrymp3",
+    "resume": "/resume.pdf"
+  },
+  "summary": "Application security professional with experience in manual and automated security assessments across the SDLC—secure design review, threat modeling, secure code review, and security testing in Java, Python, and JavaScript stacks. Builds security automation to identify and mitigate issues at scale and partners with engineering on secure development. Background in first-party security research with 15+ critical findings, five CVEs, and Google Hall of Fame recognition.",
+  "experience": [
+    {
+      "id": "zepto",
+      "role": "Security Analyst",
+      "company": "Zepto",
+      "location": "India",
+      "start": "2025-06",
+      "end": null,
+      "current": true,
+      "tags": ["AppSec", "SDLC", "Automation", "Supply Chain"],
+      "highlights": [
+        "Perform manual and automated secure code reviews and API security assessments for business-critical services (Go, Java, Python, JavaScript), triaging findings and partnering with development teams on remediation and secure coding guidance.",
+        "Designed and integrated an AI-assisted PR reviewer into CI pipelines for automated secure code review at scale, catching 70% of issues also found in manual review and shifting detection earlier in the SDLC.",
+        "Built org-wide secrets monitoring to detect and prevent credential exposure at scale, blocking 10,000+ potential credential leaks before they reached production.",
+        "Drove shift-left practices through security design reviews, threat modeling for high-risk flows, and secure development standards adopted across engineering teams.",
+        "Developed a CI runner protection platform that uses runtime network telemetry for adversarial supply chain analysis—detecting, alerting on, and blocking malicious pipeline activity."
+      ]
+    },
+    {
+      "id": "cisai",
+      "role": "Offensive Security Research Intern",
+      "company": "CISAI, Amritapuri",
+      "location": "Kerala, India",
+      "start": "2023-07",
+      "end": "2025-02",
+      "current": false,
+      "tags": ["Research", "Vuln Disclosure", "Automation"],
+      "highlights": [
+        "Conducted first-party and third-party application security research, disclosing 12+ critical vulnerabilities (RCE, LFI, XSS, CSRF) and reducing exploitable attack surface in widely deployed software.",
+        "Led 20+ application security assessments (manual and tool-assisted) across fintech, healthcare, and SaaS, averaging 30+ findings per engagement and supporting secure SDLC and compliance goals.",
+        "Built 7+ Python/Bash security automation tools for web and API testing, cutting manual assessment effort by 60% and enabling repeatable security testing at scale."
+      ]
+    },
+    {
+      "id": "wattlecorp",
+      "role": "Junior Penetration Tester Intern",
+      "company": "Wattlecorp",
+      "location": "Calicut, Kerala",
+      "start": "2020-03",
+      "end": "2020-09",
+      "current": false,
+      "tags": ["Pentest", "Network", "Documentation"],
+      "highlights": [
+        "Supported network and application penetration testing and vulnerability remediation for enterprise client environments.",
+        "Authored internal exploit documentation and contributed to cybersecurity blogs with 1,000+ readers."
+      ]
+    }
+  ],
+  "achievements": [
+    {
+      "id": "google-bounty",
+      "title": "Google Bug Bounty",
+      "description": "Reported a vulnerability in Google Cloud, earning a bounty. Listed in Google's Hall of Fame.",
+      "icon": "shield",
+      "xp": 150
+    },
+    {
+      "id": "cve",
+      "title": "CVE Assignments",
+      "description": "Received five CVEs for high/medium severity vulnerabilities.",
+      "icon": "bug",
+      "xp": 120
+    },
+    {
+      "id": "exploits",
+      "title": "Exploit Publications",
+      "description": "Published exploits for multiple vulnerabilities on PacketStorm.",
+      "icon": "code",
+      "xp": 80
+    },
+    {
+      "id": "d2c",
+      "title": "Dare 2 Compete Semi-Finalist",
+      "description": "Recognized in the 2022 D2C Competitive Leader contest.",
+      "icon": "trophy",
+      "xp": 50
+    }
+  ],
+  "certifications": [
+    { "name": "CNSP", "issuer": "Security Certification" },
+    { "name": "eJPTv2", "issuer": "INE" },
+    { "name": "CPT", "issuer": "TCM Security" },
+    { "name": "White Badge", "issuer": "Security Platform" },
+    { "name": "NSE 1 & NSE 2", "issuer": "Fortinet" }
+  ],
+  "education": [
+    {
+      "degree": "MCA",
+      "institution": "Amrita University, Amritapuri",
+      "period": "2023 – 2025"
+    },
+    {
+      "degree": "BCA",
+      "institution": "Amrita University, Amritapuri",
+      "period": "2020 – 2023"
+    }
+  ],
+  "skills": [
+    {
+      "group": "Application Security",
+      "items": [
+        { "name": "Threat Modeling", "level": 90 },
+        { "name": "Secure Code Review", "level": 95 },
+        { "name": "Security Design Review", "level": 88 },
+        { "name": "API Security", "level": 92 },
+        { "name": "SAST/DAST", "level": 85 }
+      ]
+    },
+    {
+      "group": "Cloud & Infrastructure",
+      "items": [
+        { "name": "AWS", "level": 75 },
+        { "name": "GCP", "level": 80 },
+        { "name": "Cloud Security", "level": 85 },
+        { "name": "Supply Chain Security", "level": 88 }
+      ]
+    },
+    {
+      "group": "Languages & Frameworks",
+      "items": [
+        { "name": "Python", "level": 92 },
+        { "name": "Java", "level": 85 },
+        { "name": "JavaScript", "level": 88 },
+        { "name": "Go", "level": 70 },
+        { "name": "Bash", "level": 90 }
+      ]
+    },
+    {
+      "group": "Methodologies",
+      "items": [
+        { "name": "OWASP Top 10", "level": 95 },
+        { "name": "MITRE ATT&CK", "level": 82 },
+        { "name": "SDLC Security", "level": 90 },
+        { "name": "IAM Concepts", "level": 85 }
+      ]
+    }
+  ]
+}
