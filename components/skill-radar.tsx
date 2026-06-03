@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Radar,
   RadarChart,
@@ -10,6 +11,12 @@ import {
 import type { SkillGroup } from "@/lib/profile";
 
 export function SkillRadar({ skills }: { skills: SkillGroup[] }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const topSkills = skills
     .flatMap((g) =>
       g.items.slice(0, 2).map((item) => ({
@@ -25,24 +32,28 @@ export function SkillRadar({ skills }: { skills: SkillGroup[] }) {
       <p className="section-eyebrow">Skills</p>
       <h2 className="section-title mt-2">Capability overview</h2>
       <p className="section-subtitle">Self-assessed proficiency across core domains.</p>
-      <div className="mt-6 h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={topSkills}>
-            <PolarGrid stroke="var(--border)" />
-            <PolarAngleAxis
-              dataKey="skill"
-              tick={{ fill: "var(--text-muted)", fontSize: 11 }}
-            />
-            <Radar
-              name="Level"
-              dataKey="level"
-              stroke="var(--accent)"
-              fill="var(--accent)"
-              fillOpacity={0.15}
-              strokeWidth={2}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
+      <div className="mt-6 h-72 min-h-[288px] w-full min-w-0">
+        {mounted ? (
+          <ResponsiveContainer width="100%" height={288}>
+            <RadarChart data={topSkills}>
+              <PolarGrid stroke="var(--border)" />
+              <PolarAngleAxis
+                dataKey="skill"
+                tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+              />
+              <Radar
+                name="Level"
+                dataKey="level"
+                stroke="var(--accent)"
+                fill="var(--accent)"
+                fillOpacity={0.15}
+                strokeWidth={2}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full w-full animate-pulse rounded-[var(--radius)] bg-[var(--bg-secondary)]" />
+        )}
       </div>
     </div>
   );
