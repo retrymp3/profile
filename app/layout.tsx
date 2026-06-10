@@ -7,6 +7,7 @@ import { ClearanceChip } from "@/components/clearance-chip";
 import { LiveBackground } from "@/components/live-background";
 import { ScrollProgress } from "@/components/scroll-progress";
 import { getProfile } from "@/lib/profile";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -54,6 +55,7 @@ export default function RootLayout({
           </footer>
           <ClearanceChip />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
