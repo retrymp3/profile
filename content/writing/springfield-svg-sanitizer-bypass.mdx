@@ -13,7 +13,7 @@ tags:
 
 Each SVG upload passes three checks: a regex blocklist, an XML walk, and a sanitizer that rewrites hostile content. A `javascript:` URL was still stored and executed. The sanitizer worked; its output was never written to disk.
 
-Reported via Mozilla HackerOne (April 2026). Fixed in [PR #1378](https://github.com/mozmeao/springfield/pull/1378).
+Reported via Mozilla HackerOne (April 2026).
 
 ---
 
@@ -114,13 +114,17 @@ The interactive trace below steps through the exact bytes at each layer:
 
 ## Impact
 
-The attack requires image-upload permissions and a victim who interacts with the uploaded SVG, and production Wagtail admin access is restricted to employees. These constraints reduce exploitation likelihood. The execution nonetheless occurs on a trusted Mozilla origin, which determines its severity.
+The attack requires image upload permissions. The execution nonetheless occurs on a trusted Mozilla origin, which determines its severity.
 
-Because the SVG is served same-origin with `/cms-admin/`, the script runs with the victim's ambient authority on that origin. Credentialed `fetch()` requests carry the session cookie even though `HttpOnly` prevents reading `sessionid` from `document.cookie`. A lower-privileged editor who uploads the file could therefore act within a **superuser** session if an administrator clicks the link.
+Because the SVG is served same-origin with `/cms-admin/`, the script runs with the victim's ambient authority on that origin.
+
+Content Security Policy on surrounding HTML pages does not affect this vector: the victim opens the SVG as its own document, and execution is triggered by resolving a `javascript:` URL in `xlink:href` on click, not by injecting script into a CSP protected page.
+
+Credentialed `fetch()` requests still carry the session cookie even though `HttpOnly` blocks reading `sessionid` from `document.cookie`. A lower-privileged editor who uploads the file could therefore act within a **superuser** session if an administrator clicks the link.
 
 The reachable surface includes anything within the victim's permissions: CMS pages, snippets, users, and drafts. A payload can also establish **persistence** (for example, by registering a service worker) that outlives deletion of the uploaded file.
 
-The same discarded-`filter_svg` pattern was also present in [mozilla/bedrock](https://github.com/mozilla/bedrock) (`bedrock/cms/fields.py`).
+Similar lack of defence against SVG patterns were present in other Mozilla managed entities, which were tracked in the same report. Will write about it once they are resolved.
 
 ---
 
