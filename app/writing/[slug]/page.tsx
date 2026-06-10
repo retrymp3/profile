@@ -2,9 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
+import rehypePrettyCode from "rehype-pretty-code";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Clock } from "lucide-react";
+import { SanitizerFlowExplorer } from "@/components/sanitizer-flow-explorer";
+import { WritingFigure } from "@/components/writing-figure";
+import { WritingVideo } from "@/components/writing-video";
 import { getPostBySlug, getPostSlugs } from "@/lib/posts";
+import { rehypePrettyCodeOptions } from "@/lib/shiki";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-static";
@@ -41,7 +46,13 @@ export default async function PostPage({
     options: {
       mdxOptions: {
         remarkPlugins: [remarkGfm],
+        rehypePlugins: [[rehypePrettyCode, rehypePrettyCodeOptions]],
       },
+    },
+    components: {
+      SanitizerFlowExplorer,
+      WritingVideo,
+      WritingFigure,
     },
   });
 
@@ -78,7 +89,7 @@ export default async function PostPage({
         </div>
       </header>
 
-      <div className="prose-advisory">{content}</div>
+      <div className="prose-advisory max-w-none">{content}</div>
     </article>
   );
 }

@@ -1,0 +1,216 @@
+---
+title: "Bypassing a 3 layer SVG sanitizer: Stored XSS in Mozilla"
+description: "The bypass, the parser differential, and the missing write()."
+date: "2026-06-04"
+tags:
+  - Bug Bounty
+  - Mozilla
+  - XSS
+  - SVG
+---
+
+**Springfield** is Mozilla's Wagtail CMS behind sites like [firefox.com](https://www.firefox.com). Editors can upload SVGs and other media from the admin panel; those files are served same-origin with the site.
+
+Each SVG upload passes three checks: a regex blocklist, an XML walk, and a sanitizer that rewrites hostile content. A `javascript:` URL was still stored and executed. The sanitizer worked; its output was never written to disk.
+
+Reported via Mozilla HackerOne (April 2026). Fixed in [PR #1378](https://github.com/mozmeao/springfield/pull/1378).
+
+---
+
+## The target
+
+Two properties of Springfield's media library make SVG uploads security-sensitive:
+
+- Editors can upload images, and SVG is an accepted format.
+- Uploaded media is served from the **same origin** as the site and its admin panel, under paths such as `/custom-media/images/<name>.svg`.
+
+The same-origin delivery is the critical detail. SVGs can contain hyperlinks, scripts, event handlers, and embedded HTML; when served inline, browsers treat them as active documents rather than passive image formats. Script that executes while a browser renders one of these URLs runs with the full authority of a Mozilla origin, including its cookies and CMS session.
+
+The upload path therefore has to answer a single question on every SVG: is this file safe to serve inline? Springfield answers it three times.
+
+---
+
+## The defenses
+
+Before an SVG is stored, Springfield's `SanitizingWagtailImageField` (in `springfield/cms/fields.py`) applies three independent checks:
+
+1. **Regex on the raw bytes.** A blocklist covering `<script`, `javascript:`, `on\w+=`, `<foreignObject`, and `data:text/html` is matched against the file as uploaded, before any parsing.
+
+2. **An XML traversal with defusedxml.** The document is parsed and walked. Dangerous elements (`script`, `foreignObject`) are rejected, and any attribute whose decoded value contains the substring `javascript:` is flagged.
+
+3. **py-svg-hush.** The authoritative sanitizer. [py-svg-hush](https://github.com/mozilla/svg-hush) is a Rust-backed library (`filter_svg()`) that parses an SVG and rewrites it, removing scriptable URLs and unsafe constructs rather than matching known-bad strings. Layers 1 and 2 are inexpensive heuristic gates; Layer 3 is intended to be the definitive cleaner that handles whatever the substring checks miss.
+
+This is a reasonable architecture: cheap rejections first, a robust rewriter as the backstop. A successful attack would require defeating not only the two string-based checks but also the sanitizer, which does not rely on substring matching and should neutralize a dangerous URL regardless of how it is encoded. That assumption is the one worth verifying.
+
+---
+
+## A payload that survives the string-based checks
+
+Layers 1 and 2 share a common limitation: both reason about `javascript:` as a contiguous sequence of characters. Interrupt that sequence while keeping the value valid to the browser, and both checks lose sight of it.
+
+```xml
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="200" height="200">
+  <a xlink:href="java&#x0a;script:alert(document.domain)">
+    <rect width="200" height="200" fill="red"/>
+  </a>
+</svg>
+```
+
+`&#x0a;` is an XML numeric character reference for a newline (`\n`), placed between `java` and `script`. A single insertion causes the two layers to diverge:
+
+- **Layer 1** evaluates the raw bytes and sees `java&#x0a;script:`. There is no contiguous `javascript:` in the file, so the regex does not match.
+- **Layer 2** parses the XML first, decoding the entity. The attribute value becomes `java\nscript:…`, and `"javascript:" in value.lower()` evaluates to `False`, because the newline sits inside the target substring.
+
+Both checks pass. On its own, that is insufficient: the file still reaches Layer 3, and py-svg-hush does not perform substring matching. It parses the SVG and rewrites unsafe anchors irrespective of encoding, and a decoded `java\nscript:` URL falls squarely within its remit.
+
+I uploaded the file expecting Layer 3 to rewrite the anchor and invalidate the payload. It did not. The stored file was returned byte-for-byte identical to the upload, and clicking the shape executed `alert(document.domain)`.
+
+---
+
+## Why the sanitizer did not apply
+
+The behavior was inconsistent with the architecture. The sanitizer was clearly invoked in the upload path, yet the bytes on disk were unchanged. Either `filter_svg()` was failing silently on this input, or its output was not being used. Rather than iterate on the payload, I examined how the function's return value was handled.
+
+```python
+# Vulnerable pattern (paraphrased)
+filter_svg(original_content, ...)   # return value used only to detect parse errors
+# ...the file written to disk is still original_content
+```
+
+The sanitized output was discarded. `filter_svg()` was invoked, but its result was retained only long enough to determine whether parsing raised an exception. The cleaned bytes were never written back to the upload object, so the file that persisted to disk and was later served in HTTP responses remained the original upload.
+
+py-svg-hush had been operating correctly on every malicious SVG; its output was simply never applied. In effect, the layer responsible for definitively cleaning dangerous SVGs had been reduced to a parse-error check.
+
+This reframes the finding. The encoded newline is not the vulnerability in itself; it is only what is required to pass the two string-based checks. The vulnerability is that the third layer, which is indifferent to encoding, was disconnected from the bytes it was meant to protect.
+
+---
+
+## Three parsers, three interpretations
+
+A single URL was evaluated by three components, each reaching a different conclusion:
+
+- The **regex engine** evaluates literal bytes (`java&#x0a;script:`) and does not classify it as a `javascript:` URL.
+- The **XML parser** decodes the entity to `java\nscript:`, which also does not match `javascript:`.
+- The **browser's URL parser** resolves the `xlink:href` and, per the WHATWG URL specification, strips ASCII whitespace (including newlines), yielding `javascript:alert(document.domain)`.
+
+The first two interpretations are correct within their own context yet immaterial, because only the browser's interpretation has security consequences. Any control that pins itself to a single representation of a value can be bypassed by a downstream component that interprets the same bytes differently.
+
+The interactive trace below steps through the exact bytes at each layer:
+
+<SanitizerFlowExplorer />
+
+**Upload path:** Wagtail **Images → Add images** at `/cms-admin/images/multiple/add/`.  
+**Trigger:** the victim opens a rendition URL (e.g. `/custom-media/images/<name>.width-800.svg`) and clicks the shape.  
+**Confirmation:** `alert(document.domain)` on click (recorded against a local Springfield instance; same behavior on production origins such as `www.firefox.com`).
+
+<WritingVideo
+  src="/writing/springfield-svg-xss-poc.mp4"
+  caption="PoC on localhost for alert(document.domain)."
+/>
+
+---
+
+## Impact
+
+The attack requires image-upload permissions and a victim who interacts with the uploaded SVG, and production Wagtail admin access is restricted to employees. These constraints reduce exploitation likelihood. The execution nonetheless occurs on a trusted Mozilla origin, which determines its severity.
+
+Because the SVG is served same-origin with `/cms-admin/`, the script runs with the victim's ambient authority on that origin. Credentialed `fetch()` requests carry the session cookie even though `HttpOnly` prevents reading `sessionid` from `document.cookie`. A lower-privileged editor who uploads the file could therefore act within a **superuser** session if an administrator clicks the link.
+
+The reachable surface includes anything within the victim's permissions: CMS pages, snippets, users, and drafts. A payload can also establish **persistence** (for example, by registering a service worker) that outlives deletion of the uploaded file.
+
+The same discarded-`filter_svg` pattern was also present in [mozilla/bedrock](https://github.com/mozilla/bedrock) (`bedrock/cms/fields.py`).
+
+---
+
+## Remediation
+
+[PR #1378](https://github.com/mozmeao/springfield/pull/1378) applies the py-svg-hush result by writing its output back to the stored file:
+
+```python
+sanitized_content = filter_svg(
+    original_content,
+    keep_data_url_mime_types=ALLOWED_DATA_URL_MIME_TYPES,
+)
+f.seek(0)
+f.truncate()
+f.write(sanitized_content)
+```
+
+Layers 1 and 2 remain as early rejections; Layer 3 now determines exactly which bytes are persisted. Regression coverage includes encoded `javascript:` URLs (`MALICIOUS_SVG_WITH_ENCODED_JS_URL` in `springfield/cms/tests/test_svg_sanitization.py`).
+
+---
+
+## Residual issue: stored-byte expansion
+
+Writing `filter_svg()` output back to disk was the right fix for stored XSS. It also introduced a separate availability problem I found while validating the remediation.
+
+Wagtail enforces `WAGTAILIMAGES_MAX_UPLOAD_SIZE` (default **10 MiB**) in `super().to_python()` on the **original** upload, before `_sanitize_svg()` runs. After [PR #1378](https://github.com/mozmeao/springfield/pull/1378), Layer 3 persisted whatever `filter_svg()` returned, but there was **no second size check** on `sanitized_content` before write-back. Updating `f.size` after the write keeps metadata honest; it does not re-run Wagtail's upload validation.
+
+`py-svg-hush` pretty-prints nested XML with per-depth indentation. A compact, benign SVG can expand sharply on disk. Deeply nested `<g>` elements pass Layers 1 and 2 (no scripts, no `javascript:` substrings) and still trigger expansion in Layer 3:
+
+```xml
+<svg xmlns='http://www.w3.org/2000/svg'>
+  <g><g>…<!-- n times --><rect width='1' height='1'/></g>…<!-- n times --></g>
+</svg>
+```
+
+This is not a sanitizer bypass and does not execute script. Impact is **availability**: storage growth and worker load, not confidentiality or integrity.
+
+| Nested `<g>` pairs | Upload | Stored after `filter_svg` | Multiplier |
+|--------------------|--------|---------------------------|------------|
+| 200 | ~1.4 KiB | ~81 KiB | ~56× |
+| 4,900 | ~34 KiB | ~46 MiB | ~1,399× |
+
+A ~34 KiB upload under the 10 MiB input cap could produce a ~46 MiB file on disk. After save, Springfield queues **14 automatic rendition jobs** per image (`width-2400` through `max-165x165`), so one amplified SVG also adds pressure on the `image_renditions` worker queue. Repeated uploads compound storage and worker load.
+
+| | Pre–PR #1378 | Post–PR #1378 | Merged fix ([`45a99e9`](https://github.com/mozmeao/springfield/commit/45a99e9303d9ad467b9a39964c29c3906e516712)) |
+|--|--------------|---------------|----------------------------------------------------------------|
+| `filter_svg` output stored? | No | Yes | Yes |
+| Encoded `javascript:` XSS | Vulnerable | Fixed | Fixed |
+| Nested expansion to disk | No | Yes | Rejected if `len(sanitized) > max_upload_size` |
+
+[PR #1472](https://github.com/mozmeao/springfield/pull/1472) closes the amplification window by rejecting sanitized output that exceeds the same `max_upload_size` limit before write-back. It was approved and merged in [`45a99e9`](https://github.com/mozmeao/springfield/commit/45a99e9303d9ad467b9a39964c29c3906e516712):
+
+```python
+if self.max_upload_size is not None and len(sanitized_content) > self.max_upload_size:
+    return ValidationError(
+        self.error_messages["svg_sanitized_too_large"],
+        code="svg_sanitized_too_large",
+        ...
+    )
+```
+
+The XSS fix and the expansion issue share the same Layer 3 write-back path. Persisting sanitizer output is still correct; the missing piece was measuring output size, not input size alone.
+
+Mozilla awarded a bounty via HackerOne after the issues were resolved.
+
+<WritingFigure
+  src="/writing/mozilla-hackerone-bounty.png"
+  alt="Mozilla HackerOne notification awarding a bounty to retrymp3"
+  caption="Bread = made"
+  width={800}
+  height={200}
+/>
+
+---
+
+## Takeaways
+
+- **Invoking a sanitizer is not the same as applying it.** If the output is neither persisted nor forwarded, the result is a parse-error check rather than a filter. Verify the return value, not only the call site.
+- **Parsers disagree.** A byte-level regex, an XML entity decoder, and a browser URL parser each interpret `java&#x0a;script:` differently; a control that matches one representation can be bypassed via another.
+- **SVGs are documents, not images.** Untrusted SVG uploads should be treated as active content with hyperlinks and scripts, not as opaque raster data.
+- **Validate sanitizer output, not only input.** Writing `filter_svg()` bytes back fixed XSS; without a post-sanitize size cap, pretty-printed nesting can amplify stored size far beyond the upload limit.
+
+---
+
+## References
+
+- Vulnerable code: [`fields.py` @ c50b601](https://github.com/mozmeao/springfield/blob/c50b60172019c2e6176581bd7ba07e9b9a9c8f15/springfield/cms/fields.py#L244-L300)
+- XSS fix: [github.com/mozmeao/springfield/pull/1378](https://github.com/mozmeao/springfield/pull/1378)
+- Expansion fix: [PR #1472](https://github.com/mozmeao/springfield/pull/1472) merged in [`45a99e9`](https://github.com/mozmeao/springfield/commit/45a99e9303d9ad467b9a39964c29c3906e516712)
+- py-svg-hush: [github.com/mozilla/svg-hush](https://github.com/mozilla/svg-hush)
+- Springfield setup: [mozmeao platform docs](https://mozmeao.github.io/platform-docs/getting-started/install/#springfield_1)
+
+Reported by **retrymp3** via [Mozilla HackerOne](https://hackerone.com/mozilla).

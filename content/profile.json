@@ -3,7 +3,7 @@
   "title": "Application Security Professional",
   "email": "achuthvpvp@gmail.com",
   "phone": "+918593837289",
-  "location": "Kerala, India",
+  "location": "Bangalore, India",
   "links": {
     "linkedin": "https://www.linkedin.com/in/achuthvp/",
     "github": "https://github.com/retrymp3",
@@ -21,11 +21,11 @@
       "current": true,
       "tags": ["AppSec", "SDLC", "Automation", "Supply Chain"],
       "highlights": [
-        "Perform manual and automated secure code reviews and API security assessments for business-critical services (Go, Java, Python, JavaScript), triaging findings and partnering with development teams on remediation and secure coding guidance.",
-        "Designed and integrated an AI-assisted PR reviewer into CI pipelines for automated secure code review at scale, catching 70% of issues also found in manual review and shifting detection earlier in the SDLC.",
-        "Built org-wide secrets monitoring to detect and prevent credential exposure at scale, blocking 10,000+ potential credential leaks before they reached production.",
-        "Drove shift-left practices through security design reviews, threat modeling for high-risk flows, and secure development standards adopted across engineering teams.",
-        "Developed a CI runner protection platform that uses runtime network telemetry for adversarial supply chain analysis—detecting, alerting on, and blocking malicious pipeline activity."
+        "Conduct application security reviews and API assessments for production services, partnering with engineering on remediation and secure development practices.",
+        "Build and integrate security automation into CI and development workflows.",
+        "Support org-wide controls to reduce secrets and credential exposure risk.",
+        "Participate in threat modeling and security design reviews for high-risk product flows.",
+        "Contribute to software supply chain and pipeline security initiatives."
       ]
     },
     {
