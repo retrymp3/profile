@@ -67,7 +67,7 @@ export function SpotTheBug() {
       (selected === "safe" && !snippet.vulnerable));
 
   return (
-    <section className="glass-card p-6">
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
       <div className="flex items-center gap-2">
         <Bug className="h-5 w-5 text-[var(--accent)]" />
         <h2 className="text-lg font-semibold text-[var(--text)]">Spot the Bug</h2>

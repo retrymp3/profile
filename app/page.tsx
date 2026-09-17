@@ -34,7 +34,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="glass-card px-6 py-12 md:px-10">
+      <section className="rounded-[var(--radius-lg)] bg-[var(--bg-secondary)] px-6 py-12 md:px-10">
         <InsightChallengeLazy />
       </section>
 

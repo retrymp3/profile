@@ -17,19 +17,15 @@ export function SkillRadar({ skills }: { skills: SkillGroup[] }) {
     setMounted(true);
   }, []);
 
-  // How many skills to surface per group. Languages shows more so the core
-  // stack (Python, Java, JavaScript, Go) all appear on the chart.
-  const perGroup: Record<string, number> = { "Languages & Frameworks": 4 };
-
   const topSkills = skills
     .flatMap((g) =>
-      g.items.slice(0, perGroup[g.group] ?? 2).map((item) => ({
+      g.items.slice(0, 2).map((item) => ({
         skill: item.name.length > 14 ? `${item.name.slice(0, 12)}…` : item.name,
         level: item.level,
         fullMark: 100,
       }))
     )
-    .slice(0, 10);
+    .slice(0, 8);
 
   return (
     <div className="apple-card p-6 md:p-8">
