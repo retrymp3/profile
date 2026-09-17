@@ -17,13 +17,15 @@ export function WritingFigure({
 }: WritingFigureProps) {
   return (
     <figure className="not-prose my-8">
-      <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 shadow-[var(--shadow)]">
+      <div className="overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--bg-secondary)] p-2 sm:p-3">
         <Image
           src={src}
           alt={alt}
           width={width}
           height={height}
-          className="mx-auto h-auto w-full max-w-xl rounded-[12px]"
+          className="mx-auto h-auto w-full max-w-4xl rounded-[8px]"
+          sizes="(max-width: 768px) 100vw, min(56rem, 100vw)"
+          quality={95}
         />
       </div>
       {caption && (

@@ -7,15 +7,12 @@ export function SkillMarquee({ skills }: { skills: SkillGroup[] }) {
   const doubled = [...items, ...items];
 
   return (
-    <section className="overflow-hidden rounded-[var(--radius-lg)] bg-[var(--bg-secondary)] py-8">
+    <section className="glass-card overflow-hidden py-8">
       <p className="section-eyebrow text-center">Expertise</p>
       <div className="relative mt-4 flex">
         <div className="animate-marquee flex shrink-0 gap-3 px-4">
           {doubled.map((name, i) => (
-            <span
-              key={`${name}-${i}`}
-              className="shrink-0 rounded-full bg-[var(--bg-elevated)] px-4 py-2 text-[14px] text-[var(--text-muted)] shadow-sm"
-            >
+            <span key={`${name}-${i}`} className="glass-chip shrink-0">
               {name}
             </span>
           ))}

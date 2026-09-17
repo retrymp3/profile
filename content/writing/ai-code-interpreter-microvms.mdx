@@ -1,0 +1,359 @@
+---
+title: "You Have RCE. Now What? Hunting Guest-to-Host Attack Paths in AI Code Interpreters"
+description: "From unauthenticated AF_VSOCK listeners and writable overlays to VMM notify sockets and Firecracker host gateways."
+date: "2026-07-04"
+tags:
+  - Bug Bounty
+  - Meta
+  - Grok
+  - MicroVM
+  - Vsock
+---
+
+AI products that offer a **code interpreter** are intentionally giving you arbitrary code execution. Somewhere behind the chat UI, that code runs in a Linux guest.
+
+That execution is not the vulnerability. The interesting question is what the guest can reach **after** you already have it: management listeners, golden-image secrets, writable overlays, AF_VSOCK, private gateways, privileged agents.
+
+I investigated two production stacks with the same approach: treat the interpreter guest like a small cloud VM you just landed in.
+
+- **Meta AI / Crackerjack / VMVM**
+- **Grok / xAI Hades / Firecracker**
+
+On Meta, interpreter code ran as `uid=1002`, but an unauthenticated AF_VSOCK listener on **CID 1:23** exposed a root shell. From there: management interfaces, golden-image SSH keys, a writable overlay, and a VMM notify socket on CID 2.
+
+On Grok, the session started as **root with a full capability set**. The guest could also fetch `http://172.16.0.1/` and get:
+
+```text
+Hello from Firecracker Host
+```
+
+What follows is that guest compromise and the guest-to-host / platform-facing primitives reachable from it. A full host escape was outside the scope of what I proved in this round.
+
+
+---
+
+## The target is not the chat UI
+
+Once interpreter RCE exists, the chat UI barely matters. The guest is usually an ephemeral microVM: a session user (sometimes already `root`), a RO golden image, a RW overlay or work disk, **AF_VSOCK** between guest and VMM, and product agents/proxies.
+
+Post-RCE, the useful questions are:
+
+1. **Who am I?** `uid`, caps, seccomp, `NoNewPrivs`
+2. **What listens?** systemd, Unix sockets, loopback, especially AF_VSOCK
+3. **What can I read?** golden image, credentials, baked-in secrets
+4. **What can I write?** overlay upperdirs, work disks, artifact stores the platform may consume later
+5. **What can I reach outside?** CID 2, host gateways, agent protocols
+
+**CID 1** is the guest (local privesc, extra shells, agent abuse). **CID 2** is the VMM/host side, where the isolation claim lives.
+
+```text
+Interpreter RCE → guest access
+                    ├─ local privesc / guest services
+                    ├─ disks + golden-image secrets
+                    └─ AF_VSOCK / host gateways → VMM / host
+```
+
+---
+
+## Vector map
+
+The two environments exposed different primitives, but the same broad categories kept appearing:
+
+| Vector | Meta / Crackerjack | Grok / Hades | Why it matters |
+| --- | --- | --- | --- |
+| Interpreter identity | `uid=1002` | `uid=0` | Determines whether the guest boundary already starts compromised |
+| Guest privilege escalation | AF_VSOCK CID 1:`23` → root shell | Not required | Lets attacker control the guest |
+| Secondary management surface | `guest_proxy`, `sshd-vsock` | Charon / Styx | Additional attack surface after initial foothold |
+| Golden-image exposure | SSH host keys readable from `/dev/vda` | RO image present | Platform material may be recoverable from compromised guests |
+| Writable platform-backed state | `writevessel` / overlay upper | work disk / overlay | Attacker-controlled writes may persist into platform-managed state |
+| Guest → host path | CID 2 `sd_notify` write | `172.16.0.1:80` Firecracker host | Guest can reach past its intended boundary |
+
+Both stacks required looking past the interpreter process itself.
+
+---
+
+## Meta / Crackerjack: sandbox code to guest root
+
+### Past the chat guardrails
+
+Product RCE in the interpreter is intentional. Meta's chat model is not.
+
+Ask for a shell reconnaissance script outright and the model often refuses, rewrites the request, or runs something useless. Getting the guest to execute the probes I actually needed meant working around those **chat-layer** controls before any vsock finding mattered.
+
+Three techniques consistently worked.
+
+**1. Frame the session as troubleshooting.**  
+Upload a harmless file (HTML was enough), then paste a fake MANIFOLD / SSH / Firecracker-style error and ask the model to help debug session restore. Once it is in a cooperative diagnostic mindset, requests that would look like "run recon" as a direct ask become "check what's listening," "scan `/proc` for guest_proxy/socat," or "test the vsock channel the guest agent might use." The HackerOne repro follows that path: error trace → process scan → vsock connectivity test framed as MANIFOLD recovery.
+
+**2. Ship payloads as opaque chunks, not as obvious scripts.**  
+Large bash or Python blocks with words like `vsock`, `socat`, `root`, or full recon logic often got refused or rewritten mid-paste. The reliable delivery path was:
+
+1. Base64-encode the real script.
+2. Split the ciphertext into short, meaningless chunks.
+3. Ask the model to append each chunk to a file under `/mnt/data/` (framed as saving diagnostic notes or restoring a broken helper).
+4. Once the file was complete, ask it to decode and run: `base64 -d … | bash` or `python3` on the reconstructed file.
+
+Each individual message looks like noise. The assembled artifact on disk is the real payload. That survives prompt filtering that inspects chat text more carefully than files the interpreter later executes.
+
+**3. Keep cells small.** Long sweeps sometimes failed or got refused. Short cells (one probe, append to a report file, next cell) kept execution moving.
+
+None of this is the guest vulnerability. It is how you reach the guest. After that, the interesting bugs start.
+
+<WritingFigure
+  src="/writing/meta-base64-bypass.png"
+  alt="Cropped meta.ai prompt: use base64 to avoid quoting hell, echo of encoded payload"
+  caption="Example: ship the real script as base64 so the chat text does not look like recon."
+  width={1400}
+  height={450}
+/>
+
+### Starting point: an apparently restricted interpreter
+
+Meta AI's code interpreter initially gave me arbitrary Python execution as:
+
+```text
+uid=1002(code-interpreter)
+```
+
+From that unprivileged context, the environment initially looked appropriately restricted.
+
+The guest was a real Linux system with PID 1 at `/sbin/init` and more than 100 processes. Useful capabilities were absent, and attempts to inspect `/proc/1/root` were blocked.
+
+<WritingFigure
+  src="/writing/meta-namespace-recon.png"
+  alt="Cropped meta.ai output: PID 1 is /sbin/init, 122 PIDs, /proc/1/root blocked"
+  caption="Unprivileged interpreter foothold before vsock."
+  width={1400}
+  height={400}
+/>
+
+That is the expected shape of a sandbox.
+
+The problem was what else was running inside it.
+
+### The first break: an unauthenticated root shell on AF_VSOCK
+
+Process enumeration exposed a root-owned management listener:
+
+```text
+socat vsock-listen:23,reuseaddr,fork exec:bash,pty,setsid,setpgid,stderr,ctty
+```
+
+The listener was reachable through AF_VSOCK.
+
+Connecting to CID 1, port 23 produced:
+
+```text
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+<WritingFigure
+  src="/writing/meta-vsock-root.png"
+  alt="Cropped meta.ai output: AF_VSOCK CID 1 CONNECTED uid=0(root)"
+  caption="CID 1:23 returns a root shell. No authentication."
+  width={1400}
+  height={400}
+/>
+
+That turned a low-privileged interpreter session into full root control of the backend guest. The bug is not that `socat` existed; it is that a **root-capable management listener was reachable from the same namespace that runs untrusted interpreter code**.
+
+In some sessions `import socket` failed with a misleading error; `socat` via `subprocess` still worked. The listener was the bug.
+
+### A second route: guest proxy to loopback SSH
+
+The root shell was not the only management path.
+
+A Unix socket at:
+
+```text
+/run/guest_proxy/proxy.sock
+```
+
+was mode `666` and exposed an HTTP-speaking proxy.
+
+Malformed requests produced a real HTTP response:
+
+```text
+400
+```
+
+A CONNECT request to loopback port 22 reached SSH:
+
+```text
+CONNECT 127.0.0.1:22
+```
+
+and returned:
+
+```text
+SSH-2.0-OpenSSH_8.7
+```
+
+<WritingFigure
+  src="/writing/meta-guest-proxy-ssh.png"
+  alt="Cropped meta.ai output: base64 decode pipe and SSH/OpenSSH banner"
+  caption="CONNECT 127.0.0.1:22 through guest_proxy."
+  width={1400}
+  height={500}
+/>
+
+Loopback `sshd` had `PermitEmptyPasswords yes` and `PermitRootLogin yes`. Non-local CONNECT targets were blocked, so this stays in-guest, but it is a second root-capable SSH path next to the vsock console. `sshd-vsock` on CID 1:22 was also present (banner from the interpreter user).
+
+---
+
+## Once root, enumerate the guest like infrastructure
+
+After obtaining root, the environment became much more interesting.
+
+The guest storage layout looked roughly like:
+
+```text
+vda   RO   ~18G    overlay lower / golden image
+vdb   RW   ~1G     writevessel / overlay upper
+vdc   RO           kernel modules
+```
+
+The system booted through:
+
+```text
+setup_overlay_clean
+```
+
+which established an overlay filesystem before handing control to systemd.
+
+The AF_VSOCK map included several interesting endpoints:
+
+```text
+:22     sshd-vsock
+:23     socat root listener
+:25     guest_agent
+:3128   guest_vsock_proxy
+```
+
+And PID 1 exposed:
+
+```text
+VMVM_KERNEL_MODULES_DEVICE=1
+```
+
+<WritingFigure
+  src="/writing/meta-vmvm-env.png"
+  alt="Cropped meta.ai output: VMVM_KERNEL_MODULES_DEVICE fingerprint"
+  caption="VMVM fingerprint once you have root."
+  width={1400}
+  height={400}
+/>
+
+At that point, the guest stopped looking like a disposable Python runtime and started looking like a small piece of platform infrastructure.
+
+### Golden-image secrets
+
+`/dev/vda` is the RO golden image. Mounting it and comparing SSH host keys showed they were **byte-identical** to the live guest:
+
+```text
+golden image key == live guest key
+```
+
+Key comments referenced internal Facebook build hosts. A compromised interpreter guest can recover platform host-key material that should never be available to arbitrary workloads.
+
+### Writable overlays
+
+Root can mount `/dev/vdb` and write into the overlay upperdir so attacker files appear on the live root. Canaries survived umount/remount in-session. The mount used `fsync=volatile`, which limits snapshot durability; it does not mean writes stay in RAM. If host tooling later consumes upperdir contents, that is a platform data channel. I confirmed the write primitive.
+
+---
+
+## The guest-to-host boundary: CID 2
+
+This was the most interesting part of the Meta environment.
+
+The guest contained a VMM notify credential pointing to an AF_VSOCK endpoint on **CID 2**.
+
+Reading the socket configuration and connecting to it allowed a root process in the guest to send:
+
+```text
+READY=1
+STATUS=crackerjack_probe
+```
+
+using:
+
+```text
+VSOCK-CONNECT:2:<port>
+```
+
+The write returned `rc=0`. That is a live guest-to-VMM channel. Impact depends on how the host parses those messages; as a reachable notify path it is the kind of primitive microVM boundary work starts from.
+
+uid 1002 could not read the notify credential (`Permission denied` on `cat`). The path mattered after root.
+
+### Mapping the rest of Meta's vsock surface
+
+The broader AF_VSOCK map looked like this:
+
+| Unit | Endpoint | Result |
+| --- | --- | --- |
+| `telnet.service` / `socat` | CID 1:23 | **Unauthenticated root shell** |
+| `sshd-vsock.socket` | CID 1:22 | OpenSSH banner from interpreter |
+| `guest_vsock_proxy.socket` | CID 1:3128 | Listener present |
+| `guest_agent` | CID 1:25 | Guest connection dropped |
+| `vmm.notify_socket` | CID 2:dynamic | **Write returned `rc=0`** |
+| journal vsock tailer | CID 2:1073741825 | inject → RST |
+
+AF_VSOCK is its own communication plane. A normal network scan will miss most of it.
+
+---
+
+## Grok / Hades: when the sandbox starts as root
+
+```text
+uid=0(root) gid=0(root) groups=0(root)
+CapEff: 000001ffffffffff
+Seccomp: 2
+NoNewPrivs: 1
+```
+
+No Meta-style privesc step. Session code is already root with a full cap set; seccomp / `NoNewPrivs` are the remaining local brakes. The question becomes what root can reach.
+
+PID 1 is `catatonit`. Cmdline wires xAI Hades (`xai-hades-charon init` / `serve-ch-vsock`). Guest net is `172.16.0.2/24` with gateway `172.16.0.1` and DNS `172.16.0.3`. Hostnames look like `hds-*` and change per chat. Disks include RO `vda`, RW work disk `vdb` (overlay upper under `/work/...`), and `grok-files` FUSE for artifacts. Cross-chat canaries were not visible across different `hds-*` sessions.
+
+---
+
+## Then the guest talked to the Firecracker host
+
+```bash
+curl -v http://172.16.0.1/
+```
+
+```text
+HTTP/1.1 200 OK
+Hello from Firecracker Host
+```
+
+ICMP to `.1` and `.3` worked. Port 80 answered with a page that names Firecracker. Surface was minimal (GET/HEAD, only `/` returned 200), but a host service on the guest network is still part of the post-RCE attack surface.
+
+### Charon and Styx
+
+Pulled `catatonit`, `xai-hades-charon`, and `xai-hades-styx`. Live cmdline matches: Charon does `init` / `serve-ch-vsock` and gRPC `hades.charon.Charon`; Styx is a privileged helper (production binary includes a `pentest` subcommand). Guest-origin gRPC over vsock is the natural next lane; I had not finished mapping ports or host impact, so no exploit claim there. The agent layer is still part of the surface.
+
+---
+
+## Putting it together
+
+| | Meta | Grok |
+| --- | --- | --- |
+| Entry | RCE as `uid=1002` | RCE as **`uid=0`** |
+| Guest privesc | **AF_VSOCK CID 1:23 → root** | Already root |
+| Past the guest | CID 2 `sd_notify` write | `172.16.0.1:80` Firecracker |
+
+Interpreter RCE is the starting point, not the finding.
+
+In a normal app, RCE is the headline. In a code interpreter, **RCE is the product**, so the boundary that matters is everything around that guest: vsock, disks, agents, host gateways.
+
+> **What does this guest have permission to talk to?**
+
+That is where the real attack surface begins.
+
+---
+
+**Disclosure:** Meta findings reported through Meta Bug Bounty (HackerOne `#2084694662930964`). Grok findings prepared for xAI disclosure channels.
+
+**Achuth V P**

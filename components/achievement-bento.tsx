@@ -67,7 +67,7 @@ function AchievementCard({
             <p className="mt-1 text-[13px] text-[var(--text-subtle)]">Tap to learn more</p>
           </div>
         </div>
-        <div className="absolute inset-0 flex flex-col justify-center apple-card bg-[var(--bg-secondary)] p-6 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+        <div className="absolute inset-0 flex flex-col justify-center apple-card bg-[var(--glass-bg-strong)] p-6 [backface-visibility:hidden] [transform:rotateY(180deg)]">
           <p className="text-[15px] leading-relaxed text-[var(--text-muted)]">
             {achievement.description}
           </p>

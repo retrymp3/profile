@@ -9,7 +9,7 @@
     "github": "https://github.com/retrymp3",
     "resume": "/resume.pdf"
   },
-  "summary": "Application security professional with experience in manual and automated security assessments across the SDLC—secure design review, threat modeling, secure code review, and security testing in Java, Python, and JavaScript stacks. Builds security automation to identify and mitigate issues at scale and partners with engineering on secure development. Background in first-party security research with 15+ critical findings, five CVEs, and Google Hall of Fame recognition.",
+  "summary": "Application security professional with experience in manual and automated security assessments across the SDLC—secure design review, threat modeling, secure code review, and security testing in Java, Python, JavaScript, and Go stacks. Builds security automation to identify and mitigate issues at scale and partners with engineering on secure development. Background in first-party security research with 15+ critical findings, five CVEs, Google Hall of Fame recognition, and a Mozilla bug bounty.",
   "experience": [
     {
       "id": "zepto",
@@ -65,6 +65,20 @@
       "description": "Reported a vulnerability in Google Cloud, earning a bounty. Listed in Google's Hall of Fame.",
       "icon": "shield",
       "xp": 150
+    },
+    {
+      "id": "mozilla-bounty",
+      "title": "Mozilla Bug Bounty",
+      "description": "Reported a stored XSS via a 3-layer SVG sanitizer bypass in Mozilla's Springfield (Wagtail) CMS through the Mozilla bug bounty program on HackerOne.",
+      "icon": "shield",
+      "xp": 140
+    },
+    {
+      "id": "ai-sandbox-research",
+      "title": "AI Interpreter MicroVM Research",
+      "description": "Post-RCE guest-to-host research on AI code interpreters: AF_VSOCK root on Meta Crackerjack, root-by-default and Firecracker host reachability on Grok Hades.",
+      "icon": "code",
+      "xp": 130
     },
     {
       "id": "cve",
@@ -133,7 +147,7 @@
         { "name": "Python", "level": 92 },
         { "name": "Java", "level": 85 },
         { "name": "JavaScript", "level": 88 },
-        { "name": "Go", "level": 70 },
+        { "name": "Go", "level": 90 },
         { "name": "Bash", "level": 90 }
       ]
     },

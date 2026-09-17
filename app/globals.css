@@ -1,24 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #fbfbfd;
-  --bg-elevated: #ffffff;
-  --bg-secondary: #f5f5f7;
-  --bg-card: #ffffff;
-  --border: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.12);
-  --text: #1d1d1f;
-  --text-muted: #6e6e73;
-  --text-subtle: #86868b;
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
-  --accent-secondary: #2997ff;
-  --link: #0066cc;
-  --link-hover: #0071e3;
-  --danger: #ff3b30;
-  --success: #34c759;
-  --shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+  /* Purple-hue dark theme — deep violet-black base with an amethyst accent.
+     Applied site-wide regardless of system preference for a cohesive feel. */
+  --bg: #09090e;
+  --bg-elevated: #191324;
+  --bg-secondary: #110d1b;
+  --bg-card: #191324;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(194, 172, 239, 0.22);
+  --text: #faf8ff;
+  --text-muted: #d4cfec;
+  --text-subtle: #a9a0c6;
+  --accent: #a86edf;
+  --accent-hover: #bd8feb;
+  --accent-secondary: #c096ea;
+  --link: #d4c4f7;
+  --link-hover: #e6dbfb;
+  --danger: #ff5d72;
+  --success: #4ade80;
+  --shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 50px rgba(0, 0, 0, 0.6);
+
+  /* Liquid-glass tokens — a translucent violet tint so the fluid scene behind
+     reads as frosted glass rather than showing straight through. */
+  --glass-bg: rgba(27, 21, 40, 0.45);
+  --glass-bg-strong: rgba(33, 25, 49, 0.62);
+  --glass-border: rgba(199, 179, 240, 0.16);
+  --glass-highlight: rgba(255, 255, 255, 0.5);
+
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
   --font-display: var(--font-sans);
@@ -85,22 +95,111 @@ h4 {
   color: var(--text);
 }
 
+/* Liquid glass — applies to every card/textbox surface site-wide.
+   Wrapped in @layer components so Tailwind utilities (e.g. `fixed`, `relative`)
+   always win over the base `position: relative` below. */
+@layer components {
 .glass-card,
 .apple-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  position: relative;
+  background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.015) 44%,
+      rgba(168, 110, 223, 0.04) 100%
+    ),
+    var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.22) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 18px 50px -22px rgba(0, 0, 0, 0.8),
+    0 0 70px -36px rgba(168, 110, 223, 0.38);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Specular sheen along the top edge so the glass catches light. */
+.glass-card::before,
+.apple-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0) 24%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Soft violet bloom that fades in on hover for a lit, fluid feel. */
+.glass-card::after,
+.apple-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 0%),
+    rgba(199, 179, 240, 0.11),
+    rgba(168, 110, 223, 0.06) 42%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glass-card:hover::after,
+.apple-card:hover::after {
+  opacity: 1;
 }
 
 .apple-card-hover {
-  transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1),
-    box-shadow 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.45s ease;
 }
 
 .apple-card-hover:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.24) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 30px 70px -24px rgba(0, 0, 0, 0.85),
+    0 0 60px -16px rgba(168, 110, 223, 0.42);
+}
+
+/* Reusable glass chip for tags/skills. */
+.glass-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.12) inset;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-chip:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
 }
 
 .gradient-text {
@@ -112,9 +211,9 @@ h4 {
 .section-eyebrow {
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-subtle);
+  color: var(--accent);
 }
 
 .section-title {
@@ -203,18 +302,11 @@ pre[data-theme*=" "] code {
   background: transparent !important;
 }
 
+/* The site is always dark, so use the dark syntax tokens unconditionally. */
 pre[data-theme*=" "] span,
 code[data-theme*=" "] span {
-  color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  pre[data-theme*=" "] span,
-  code[data-theme*=" "] span {
-    color: var(--shiki-dark);
-    background-color: var(--shiki-dark-bg);
-  }
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
 }
 
 .shiki-block pre.shiki {
@@ -255,9 +347,9 @@ code[data-theme*=" "] span {
 }
 
 .cmdk-overlay {
-  background: rgba(251, 251, 253, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(10, 6, 19, 0.6);
+  backdrop-filter: saturate(160%) blur(20px);
+  -webkit-backdrop-filter: saturate(160%) blur(20px);
 }
 
 @keyframes marquee {
@@ -279,26 +371,5 @@ code[data-theme*=" "] span {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --bg-elevated: #1c1c1e;
-    --bg-secondary: #2c2c2e;
-    --bg-card: #1c1c1e;
-    --border: rgba(255, 255, 255, 0.1);
-    --border-strong: rgba(255, 255, 255, 0.14);
-    --text: #f5f5f7;
-    --text-muted: #a1a1a6;
-    --text-subtle: #86868b;
-    --accent: #0a84ff;
-    --accent-hover: #409cff;
-    --link: #2997ff;
-    --link-hover: #64b5ff;
-    --shadow: 0 2px 24px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
-  }
-
-  .cmdk-overlay {
-    background: rgba(0, 0, 0, 0.65);
-  }
-}
+/* The purple theme in :root is intentionally applied for both light and dark
+   system preferences, so no prefers-color-scheme override here. */

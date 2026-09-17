@@ -58,7 +58,7 @@ export function TerminalHero({
       : "";
 
   return (
-    <section className="advisory-grid relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-6 md:p-10">
+    <section className="advisory-grid glass-card relative overflow-hidden p-6 md:p-10">
       <div className="absolute inset-0 bg-gradient-to-br from-[color-mix(in_srgb,var(--accent)_8%,transparent)] to-transparent pointer-events-none" />
 
       <motion.div
