@@ -37,7 +37,7 @@ On Grok, the session started as **root with a full capability set**. The guest c
 Hello from Firecracker Host
 ```
 
-Here is what that foothold reached. I did not get a full host escape.
+Here is what that foothold reached.
 
 
 ---
@@ -369,15 +369,15 @@ I pulled `catatonit`, `xai-hades-charon`, and `xai-hades-styx`. The live command
 | Guest privesc | **AF_VSOCK CID 1:23 → root** | Already root |
 | Past the guest | CID 2 `sd_notify` write | `172.16.0.1:80` Firecracker |
 
-Running code in the chat is how you get in. After that, what mattered was vsock, disks, agents, and host gateways.
+Running code in the chat is only how you get into the guest. On Meta that guest starts as `uid=1002`, and an unauthenticated `socat` listener on AF_VSOCK CID 1:23 turns it into root. From that root shell the guest can read golden-image SSH keys, write the overlay on `/dev/vdb`, and connect to the VMM notify socket on CID 2. The notify write returned `rc=0`. `READY=1` and `STATUS=crackerjack_probe` left the guest. That is the closest host conversation I got: the write returned `rc=0`, so the bytes left the guest, and what VMVM does with `STATUS` and `READY` is still open. The overlay write is the other Meta lead, because those files sit on a disk the host might read later.
 
-> What does this guest have permission to talk to?
+On Grok there is no privilege jump. The session is already root, with a full capability set, and it can open `http://172.16.0.1/` and read "Hello from Firecracker Host". Only `/` returns 200, and only GET and HEAD. Charon and Styx are on the guest, Charon speaks gRPC, and Styx ships with a `pentest` subcommand. I never finished mapping which vsock ports accept that gRPC.
+
+If anyone wants to continue this research, the paths I would keep pulling on are the Meta notify parser, the overlay consumer, the Firecracker gateway, and Charon's ports. If you get a shell in one of these guests, start there. Happy research :)
 
 ---
 
-## Terms
-
-The icon next to a term jumps here and opens that row.
+## Keyword definitions
 
 <Glossary />
 
