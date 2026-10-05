@@ -6,6 +6,7 @@ import rehypePrettyCode from "rehype-pretty-code";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Clock } from "lucide-react";
 import { SanitizerFlowExplorer } from "@/components/sanitizer-flow-explorer";
+import { Glossary, Term } from "@/components/writing-glossary";
 import { WritingFigure } from "@/components/writing-figure";
 import { WritingVideo } from "@/components/writing-video";
 import { getPostBySlug, getPostSlugs } from "@/lib/posts";
@@ -53,6 +54,8 @@ export default async function PostPage({
       SanitizerFlowExplorer,
       WritingVideo,
       WritingFigure,
+      Term,
+      Glossary,
     },
   });
 

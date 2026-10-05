@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 440" role="img" aria-labelledby="cellsTitle cellsDesc">
+  <title id="cellsTitle">Short cells instead of one long sweep</title>
+  <desc id="cellsDesc">A long recon sweep is refused. Short cells each run one probe and append the output to a report file, then the next cell continues.</desc>
+  <style>
+  .canvas { fill: #f5f5f7; }
+  .card { fill: #ffffff; }
+  .ink { fill: #1d1d1f; }
+  .muted { fill: #6e6e73; }
+  .accent { fill: #0066cc; }
+  .onpill { fill: #ffffff; }
+  .pill { fill: #1d1d1f; }
+  .chip { fill: #f5f5f7; }
+  .warn { fill: #ffe8c2; }
+  .info { fill: #d6ecff; }
+  .ok { fill: #e7f8ec; }
+  .tape { fill: #f5c16c; }
+  .paper { fill: #fff7e8; }
+  .term { fill: #f5f5f7; }
+  .termok { fill: #248a3d; }
+  .termmuted { fill: #6e6e73; }
+  .danger { fill: #ff3b30; }
+  .hair { stroke: #1d1d1f; }
+  .faint { stroke: #c7c7cc; }
+  .arrow { stroke: #86868b; }
+  .danger-stroke { stroke: #ff3b30; }
+  .outline { stroke: rgba(0, 0, 0, 0.12); }
+  @media (prefers-color-scheme: dark) {
+    .canvas { fill: #2c2c2e; }
+    .card { fill: #1c1c1e; }
+    .ink { fill: #f5f5f7; }
+    .muted { fill: #a1a1a6; }
+    .accent { fill: #2997ff; }
+    .onpill { fill: #1d1d1f; }
+    .pill { fill: #f5f5f7; }
+    .chip { fill: #2c2c2e; }
+    .warn { fill: #3d3424; }
+    .info { fill: #1c3348; }
+    .ok { fill: #14301c; }
+    .tape { fill: #c48a2a; }
+    .paper { fill: #3d3424; }
+    .term { fill: #000000; }
+    .termok { fill: #30d158; }
+    .termmuted { fill: #a1a1a6; }
+    .hair { stroke: #f5f5f7; }
+    .faint { stroke: rgba(255, 255, 255, 0.22); }
+    .outline { stroke: rgba(255, 255, 255, 0.14); }
+  }
+</style>
+  <rect class="canvas" width="1120" height="440" rx="16"/>
+
+  <g fill="none" class="arrow" stroke-width="2" stroke-linecap="round">
+    <path d="M360 196h36"/>
+    <path d="M388 190l8 6-8 6"/>
+    <path d="M748 196h36"/>
+    <path d="M776 190l8 6-8 6"/>
+  </g>
+  <g>
+    <rect class="card" x="28" y="48" width="320" height="300" rx="18"/>
+    <rect class="chip hair" x="92" y="88" width="150" height="150" rx="10" stroke-width="2"/>
+    <g class="faint" fill="none" stroke-width="3" stroke-linecap="round">
+      <path d="M110 114h114"/>
+      <path d="M110 132h96"/>
+      <path d="M110 150h108"/>
+      <path d="M110 168h70"/>
+      <path d="M110 186h100"/>
+      <path d="M110 204h84"/>
+    </g>
+    <path class="danger-stroke" d="M108 104l118 118" fill="none" stroke-width="6" stroke-linecap="round"/>
+    <path class="danger-stroke" d="M226 104l-118 118" fill="none" stroke-width="6" stroke-linecap="round"/>
+    <text class="ink" x="188" y="278" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="650">One long sweep</text>
+    <text class="muted" x="188" y="300" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Refused or dropped</text>
+  </g>
+  <g>
+    <rect class="card" x="404" y="48" width="332" height="300" rx="18"/>
+    <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">
+      <rect class="chip hair" x="448" y="86" width="200" height="40" rx="20" stroke-width="1.5"/>
+      <text class="ink" x="548" y="111" text-anchor="middle">1. one probe</text>
+      <rect class="chip hair" x="448" y="140" width="200" height="40" rx="20" stroke-width="1.5"/>
+      <text class="ink" x="548" y="165" text-anchor="middle">2. append to report</text>
+      <rect class="chip hair" x="448" y="194" width="200" height="40" rx="20" stroke-width="1.5"/>
+      <text class="ink" x="548" y="219" text-anchor="middle">3. next cell</text>
+    </g>
+    <text class="ink" x="570" y="278" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="650">Short cells</text>
+    <text class="muted" x="570" y="300" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">One step, then the next</text>
+  </g>
+  <g>
+    <rect class="card" x="792" y="48" width="300" height="300" rx="18"/>
+    <path class="paper hair" d="M882 92h110l16 16v112H882z" stroke-width="2"/>
+    <path class="hair" d="M992 92v16h16" fill="none" stroke-width="2"/>
+    <g class="faint" fill="none" stroke-width="2" stroke-linecap="round">
+      <path d="M900 128h78"/>
+      <path d="M900 146h64"/>
+      <path d="M900 164h72"/>
+      <path d="M900 182h48"/>
+    </g>
+    <text class="ink" x="942" y="278" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="650">Report on disk</text>
+    <text class="muted" x="942" y="300" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Probes land in the guest</text>
+  </g>
+</svg>

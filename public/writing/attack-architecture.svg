@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 520" role="img" aria-labelledby="archTitle archDesc">
+  <title id="archTitle">Attack paths from the chat into each guest</title>
+  <desc id="archDesc">Code from chat lands in a Linux guest. On Meta, uid 1002 reaches a root shell on AF_VSOCK port 23, then golden-image keys, a writable overlay, and a CID 2 notify socket. On Grok, the session is already root and can open the Firecracker host page at 172.16.0.1.</desc>
+  <style>
+  .canvas { fill: #f5f5f7; }
+  .card { fill: #ffffff; }
+  .ink { fill: #1d1d1f; }
+  .muted { fill: #6e6e73; }
+  .accent { fill: #0066cc; }
+  .onpill { fill: #ffffff; }
+  .pill { fill: #1d1d1f; }
+  .chip { fill: #f5f5f7; }
+  .warn { fill: #ffe8c2; }
+  .info { fill: #d6ecff; }
+  .ok { fill: #e7f8ec; }
+  .tape { fill: #f5c16c; }
+  .paper { fill: #fff7e8; }
+  .term { fill: #f5f5f7; }
+  .termok { fill: #248a3d; }
+  .termmuted { fill: #6e6e73; }
+  .danger { fill: #ff3b30; }
+  .hair { stroke: #1d1d1f; }
+  .faint { stroke: #c7c7cc; }
+  .arrow { stroke: #86868b; }
+  .danger-stroke { stroke: #ff3b30; }
+  .jump { stroke: #0066cc; }
+  .outline { stroke: rgba(0, 0, 0, 0.12); }
+  @media (prefers-color-scheme: dark) {
+    .canvas { fill: #2c2c2e; }
+    .card { fill: #1c1c1e; }
+    .ink { fill: #f5f5f7; }
+    .muted { fill: #a1a1a6; }
+    .accent { fill: #2997ff; }
+    .onpill { fill: #1d1d1f; }
+    .pill { fill: #f5f5f7; }
+    .chip { fill: #2c2c2e; }
+    .warn { fill: #3d3424; }
+    .info { fill: #1c3348; }
+    .ok { fill: #14301c; }
+    .tape { fill: #c48a2a; }
+    .paper { fill: #3d3424; }
+    .term { fill: #000000; }
+    .termok { fill: #30d158; }
+    .termmuted { fill: #a1a1a6; }
+    .hair { stroke: #f5f5f7; }
+    .faint { stroke: rgba(255, 255, 255, 0.22); }
+    .jump { stroke: #2997ff; }
+    .outline { stroke: rgba(255, 255, 255, 0.14); }
+  }
+</style>
+  <rect class="canvas" width="1120" height="520" rx="16"/>
+
+  <g>
+    <rect class="card" x="28" y="170" width="180" height="160" rx="18"/>
+    <rect class="pill" x="52" y="206" width="132" height="52" rx="18"/>
+    <text class="onpill" x="118" y="237" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">run this</text>
+    <text class="ink" x="118" y="292" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="650">Chat</text>
+    <text class="muted" x="118" y="312" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">code goes in</text>
+  </g>
+  <g fill="none" class="arrow" stroke-width="2" stroke-linecap="round">
+    <path d="M208 250h28"/>
+    <path d="M236 130v240"/>
+    <path d="M236 130h36"/>
+    <path d="M264 124l8 6-8 6"/>
+    <path d="M236 370h36"/>
+    <path d="M264 364l8 6-8 6"/>
+    <path d="M530 130h36"/>
+    <path d="M558 124l8 6-8 6"/>
+    <path d="M530 370h36"/>
+    <path d="M558 364l8 6-8 6"/>
+    <path d="M824 130h28"/>
+    <path d="M844 124l8 6-8 6"/>
+    <path d="M824 370h28"/>
+    <path d="M844 364l8 6-8 6"/>
+  </g>
+  <g>
+    <rect class="card" x="280" y="36" width="250" height="188" rx="18"/>
+    <text class="accent" x="405" y="60" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">meta.ai</text>
+    <rect class="chip hair" x="294" y="108" width="90" height="70" rx="12" stroke-width="1.5"/>
+    <text class="ink" x="339" y="138" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" font-weight="650">uid=1002</text>
+    <text class="muted" x="339" y="158" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">interpreter</text>
+    <path class="jump" d="M384 140c16-36 30-36 46 0" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    <path class="jump" d="M422 144l8-6-1 10" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="accent" x="407" y="92" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="650">:23</text>
+    <rect class="pill" x="430" y="108" width="90" height="70" rx="12"/>
+    <text class="onpill" x="475" y="138" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="650">uid=0</text>
+    <text class="onpill" x="475" y="158" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">root</text>
+    <text class="muted" x="405" y="204" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">socat on CID 1, no auth</text>
+  </g>
+  <g>
+    <rect class="card" x="280" y="276" width="250" height="188" rx="18"/>
+    <text class="accent" x="305" y="308" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Grok</text>
+    <text class="ink" x="305" y="336" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">uid=0</text>
+    <text class="muted" x="305" y="362" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">full capability set</text>
+    <rect class="pill" x="305" y="384" width="150" height="32" rx="8"/>
+    <text class="onpill" x="380" y="405" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">already root</text>
+    <text class="muted" x="305" y="440" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Hades guest</text>
+  </g>
+  <g>
+    <rect class="card" x="574" y="36" width="250" height="188" rx="18"/>
+    <text class="muted" x="599" y="68" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">from root</text>
+    <text class="ink" x="599" y="100" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">golden-image keys</text>
+    <text class="ink" x="599" y="128" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">writable overlay</text>
+    <text class="ink" x="599" y="156" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">guest_proxy SSH</text>
+    <rect class="warn" x="599" y="176" width="168" height="28" rx="8"/>
+    <text class="ink" x="683" y="195" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">CID 2 notify</text>
+  </g>
+  <g>
+    <rect class="card" x="574" y="276" width="250" height="188" rx="18"/>
+    <text class="muted" x="599" y="308" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">from the guest</text>
+    <text class="ink" x="599" y="340" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">172.16.0.1:80</text>
+    <text class="ink" x="599" y="368" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">GET / only</text>
+    <rect class="term outline" x="599" y="390" width="196" height="48" rx="8" stroke-width="1"/>
+    <text class="termok" x="697" y="412" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12">Hello from</text>
+    <text class="termok" x="697" y="428" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12">Firecracker Host</text>
+  </g>
+  <g>
+    <rect class="card outline" x="860" y="78" width="228" height="104" rx="18" stroke-width="1.5"/>
+    <text class="ink" x="974" y="118" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="650">VMVM</text>
+    <text class="muted" x="974" y="142" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">sd_notify write</text>
+    <rect class="card outline" x="860" y="318" width="228" height="104" rx="18" stroke-width="1.5"/>
+    <text class="ink" x="974" y="358" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="650">Firecracker</text>
+    <text class="muted" x="974" y="382" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">host gateway</text>
+  </g>
+</svg>
